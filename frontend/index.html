@@ -1,0 +1,18 @@
+<form id="jobForm">
+  <input type="text" id="name" placeholder="Name" required />
+  <input type="text" id="type" placeholder="Type of Work" required />
+  <input type="email" id="email" placeholder="Email" required />
+  <input type="text" id="address" placeholder="Address or Plus Code" />
+  
+  <!-- Optional coordinates -->
+  <input type="number" step="any" id="lat" placeholder="Latitude (optional)" />
+  <input type="number" step="any" id="lng" placeholder="Longitude (optional)" />
+
+  <button type="submit">Add Job</button>
+</form>
+
+<div id="map" style="width:100%; height:500px;"></div>
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=VITE_GOOGLE_MAPS_KEY&callback=initMap&libraries=places,directions"
+></script>
+<script type="module" src="/main.js"></script>

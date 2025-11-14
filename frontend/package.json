@@ -1,0 +1,12 @@
+{
+  "name": "route-optimization-frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vite": "^4.4.9"
+  }
+}
