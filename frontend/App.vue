@@ -13,6 +13,10 @@
 </template>
 
 <script setup>
+</script>
+
+
+<script setup>
 import { ref } from 'vue';
 import JobForm from './components/JobForm.vue';
 import JobMap from './components/JobMap.vue';

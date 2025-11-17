@@ -2,6 +2,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
+const authRoutes = require("./auth");
+const workerRoutes = require("./workerRoutes");
+const adminRoutes = require("./adminRoutes");
 
 // Use native fetch when available (Node 18+), otherwise fallback to node-fetch
 let fetchFn = global.fetch;
@@ -10,7 +13,11 @@ if (!fetchFn) {
     import("node-fetch").then(({ default: fetch }) => fetch(...args));
 }
 
-const { predictJobDuration, calculateAddressConfidence, predictTravelTime } = require("./ai_helpers");
+const {
+  predictJobDuration,
+  calculateAddressConfidence,
+  predictTravelTime,
+} = require("./ai_helpers");
 const { sendSMS } = require("./sms_helpers"); // SMS helper
 
 const app = express();
@@ -24,6 +31,11 @@ app.use(
 );
 
 app.use(express.json());
+
+// Mount routes
+app.use("/auth", authRoutes);
+app.use("/worker", workerRoutes);
+app.use("/admin", adminRoutes);
 
 // PostgreSQL Connection
 const pool = new Pool({
@@ -64,7 +76,7 @@ app.post("/jobs", async (req, res) => {
     const geoData = await geoRes.json();
 
     if (geoData.status !== "OK" || !geoData.results?.length) {
-      await sendSMS(phone, "No available workers at the moment.");
+      try { await sendSMS(phone, "No available workers at the moment."); } catch (smsErr) { console.error("SMS failed:", smsErr); }
       return res.status(400).json({ error: "Invalid address or API key error" });
     }
 
@@ -75,7 +87,7 @@ app.post("/jobs", async (req, res) => {
     const employees = employeesRes.rows;
 
     if (!employees.length) {
-      await sendSMS(phone, "No available workers at the moment.");
+      try { await sendSMS(phone, "No available workers at the moment."); } catch (smsErr) { console.error("SMS failed:", smsErr); }
       return res.status(400).json({ error: "No employees available" });
     }
 
@@ -94,7 +106,7 @@ app.post("/jobs", async (req, res) => {
     }
 
     if (!nearestEmployee || nearestDistance > MAX_DISTANCE_KM) {
-      await sendSMS(phone, "No available workers at the moment.");
+      try { await sendSMS(phone, "No available workers at the moment."); } catch (smsErr) { console.error("SMS failed:", smsErr); }
       return res.status(400).json({ error: "No employee nearby" });
     }
 
@@ -130,13 +142,17 @@ app.post("/jobs", async (req, res) => {
     // Calculate ETA using travel time prediction
     const etaMinutes = predictTravelTime(nearestEmployee.lat, nearestEmployee.lng, lat, lng);
 
-    // Send SMS to client
-    await sendSMS(phone, `Worker has been assigned. He will arrive in approx ${etaMinutes} minutes.`);
+    // Send SMS to client (handle errors gracefully)
+    try {
+      await sendSMS(phone, `Worker has been assigned. He will arrive in approx ${etaMinutes} minutes.`);
+    } catch (smsErr) {
+      console.error("SMS failed:", smsErr);
+    }
 
     res.json({
       job,
       assignedEmployee: nearestEmployee.name,
-      etaMinutes
+      etaMinutes,
     });
   } catch (err) {
     console.error("❗ Error in /jobs route:", err);
